@@ -163,6 +163,58 @@ class AEPDataCleaner:
         
         return self
     
+    def parse_agent_names(self):
+        """Parse agent names into separate first, last, and middle initial fields."""
+        logger.info("Parsing agent names into separate fields")
+        
+        if 'manager_hierarchy_name' not in self.df.columns:
+            logger.warning("manager_hierarchy_name column not found, skipping name parsing")
+            return self
+        
+        # Parse names in format "LASTNAME,FIRSTNAME MIDDLEINITIAL"
+        def parse_name(name_str):
+            if pd.isna(name_str) or not isinstance(name_str, str):
+                return pd.Series([None, None, None])
+            
+            # Clean the name string
+            name_str = str(name_str).strip()
+            
+            # Split on comma
+            parts = name_str.split(',')
+            if len(parts) != 2:
+                # Handle edge cases where format doesn't match expected pattern
+                return pd.Series([None, None, None])
+            
+            last_name = parts[0].strip()
+            first_part = parts[1].strip()
+            
+            # Split first part on spaces to separate first name and middle initial
+            name_parts = first_part.split()
+            
+            if len(name_parts) == 0:
+                first_name = None
+                middle_initial = None
+            elif len(name_parts) == 1:
+                first_name = name_parts[0]
+                middle_initial = None
+            else:
+                first_name = name_parts[0]
+                # Take the first character of the last part as middle initial
+                middle_initial = name_parts[-1][0] if name_parts[-1] else None
+            
+            return pd.Series([last_name, first_name, middle_initial])
+        
+        # Apply the name parsing
+        name_columns = self.df['manager_hierarchy_name'].apply(parse_name)
+        name_columns.columns = ['agent_last_name', 'agent_first_name', 'agent_middle_initial']
+        
+        # Add the new columns to the dataframe
+        self.df = pd.concat([self.df, name_columns], axis=1)
+        
+        logger.info("Agent name parsing complete")
+        
+        return self
+    
     def validate_data(self):
         """Validate data quality and log issues."""
         logger.info("Validating data quality")
@@ -221,6 +273,7 @@ class AEPDataCleaner:
          .fix_data_types()
          .handle_missing_values()
          .add_calculated_metrics()
+         .parse_agent_names()
          .validate_data()
          .save_cleaned_data())
         

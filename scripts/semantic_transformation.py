@@ -57,6 +57,9 @@ class SemanticTransformer:
             'manager_hierarchy_location': 'location',
             'manager_hierarchy_supervisor': 'supervisor_name', 
             'manager_hierarchy_name': 'agent_name',
+            'agent_first_name': 'agent_first_name',  # Keep same name
+            'agent_last_name': 'agent_last_name',    # Keep same name
+            'agent_middle_initial': 'agent_middle_initial',  # Keep same name
             
             # Date columns
             'date_year': 'performance_year',
