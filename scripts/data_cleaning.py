@@ -194,7 +194,7 @@ class AEPDataCleaner:
 
 if __name__ == "__main__":
     # Run the cleaning pipeline
-    cleaner = AEPDataCleaner('data/raw/aep performance data.csv')
+    cleaner = AEPDataCleaner('data/raw/aep-performance-data.csv')
     cleaned_df = cleaner.run_pipeline()
     
     print(f"\nCleaning complete!")

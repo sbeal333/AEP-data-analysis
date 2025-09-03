@@ -1,6 +1,6 @@
 # AEP Performance Data - Applied Filters
 
-> Documentation for: aep performance data.csv
+> Documentation for: aep-performance-data.csv
 > Created: 2025-01-03
 
 ## Source Data Filters Applied
