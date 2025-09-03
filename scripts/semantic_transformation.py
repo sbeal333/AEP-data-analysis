@@ -131,6 +131,50 @@ class SemanticTransformer:
         """
         logger.info("Adding business logic columns")
         
+        # Performance goals from config/performance_goals.md
+        PERFORMANCE_GOALS = {
+            'talk_time_seconds': 279,
+            'hold_time_seconds': 10,
+            'after_call_work_seconds': 41,
+            'average_handle_time_seconds': 330  # Sum of above three
+        }
+        
+        # Goal achievement calculations
+        logger.info("Calculating goal achievements")
+        
+        # Individual goal achievements (1 if meets goal, 0 if not)
+        if 'talk_time_seconds' in self.df.columns:
+            self.df['talk_time_goal_met'] = (
+                self.df['talk_time_seconds'] <= PERFORMANCE_GOALS['talk_time_seconds']
+            ).astype(int)
+        
+        if 'hold_time_seconds' in self.df.columns:
+            self.df['hold_time_goal_met'] = (
+                self.df['hold_time_seconds'] <= PERFORMANCE_GOALS['hold_time_seconds']
+            ).astype(int)
+        
+        if 'after_call_work_seconds' in self.df.columns:
+            self.df['acw_goal_met'] = (
+                self.df['after_call_work_seconds'] <= PERFORMANCE_GOALS['after_call_work_seconds']
+            ).astype(int)
+        
+        if 'average_handle_time_seconds' in self.df.columns:
+            self.df['aht_goal_met'] = (
+                self.df['average_handle_time_seconds'] <= PERFORMANCE_GOALS['average_handle_time_seconds']
+            ).astype(int)
+        
+        # Overall goal achievement score (0-4, higher is better)
+        goal_columns = ['talk_time_goal_met', 'hold_time_goal_met', 'acw_goal_met', 'aht_goal_met']
+        existing_goal_columns = [col for col in goal_columns if col in self.df.columns]
+        
+        if existing_goal_columns:
+            self.df['daily_goals_met_count'] = self.df[existing_goal_columns].sum(axis=1)
+            self.df['daily_goals_met_rate'] = self.df['daily_goals_met_count'] / len(existing_goal_columns)
+        
+        # Performance excellence flag (meets all time-based goals)
+        if len(existing_goal_columns) >= 3:  # At least 3 time-based goals
+            self.df['all_time_goals_met'] = (self.df['daily_goals_met_count'] >= 3).astype(int)
+        
         # EDIT THIS SECTION: Add your business logic calculations
         
         # Example: Performance tier based on overall score
