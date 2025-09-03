@@ -28,8 +28,11 @@ data/raw/*
 data/processed/*
 data/external/*
 !data/raw/.gitkeep
+!data/raw/*.md
 !data/processed/.gitkeep
+!data/processed/*.md
 !data/external/.gitkeep
+!data/external/*.md
 
 # Reports (keeping structure)
 reports/*
