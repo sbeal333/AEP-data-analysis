@@ -51,20 +51,24 @@ class AEPDataCleaner:
         """Create proper date column from year, month, day."""
         logger.info("Parsing date columns")
         
-        # Create date column from components
-        self.df['date'] = pd.to_datetime(
-            self.df[['date_year', 'date_month', 'date_day']].rename(columns={
-                'date_year': 'year',
-                'date_month': 'month', 
-                'date_day': 'day'
-            }),
-            errors='coerce'
+        # Create date column from components (month is text like "January")
+        date_df = self.df[['date_year', 'date_month', 'date_day']].copy()
+        date_df['date_combined'] = (
+            date_df['date_year'].astype(str) + '-' + 
+            date_df['date_month'].astype(str) + '-' + 
+            date_df['date_day'].astype(str)
         )
         
+        # Parse the combined date string
+        parsed_dates = pd.to_datetime(date_df['date_combined'], errors='coerce')
+        
+        # Format date as YYYY-MM-DD string for PostgreSQL compatibility
+        self.df['date'] = parsed_dates.dt.strftime('%Y-%m-%d')
+        
         # Add derived date columns
-        self.df['weekday'] = self.df['date'].dt.day_name()
-        self.df['week_number'] = self.df['date'].dt.isocalendar().week
-        self.df['is_weekend'] = self.df['date'].dt.dayofweek.isin([5, 6])
+        self.df['weekday'] = parsed_dates.dt.day_name()
+        self.df['week_number'] = parsed_dates.dt.isocalendar().week.astype('Int64')
+        self.df['is_weekend'] = parsed_dates.dt.dayofweek.isin([5, 6])
         
         return self
     
@@ -106,6 +110,37 @@ class AEPDataCleaner:
         
         return self
     
+    def fix_data_types(self):
+        """Fix data types for problematic columns."""
+        logger.info("Fixing data types")
+        
+        # Fix interaction_count - convert to numeric, coercing errors to NaN
+        if 'interaction_count' in self.df.columns:
+            self.df['interaction_count'] = pd.to_numeric(
+                self.df['interaction_count'], 
+                errors='coerce'
+            ).astype('Int64')  # Use nullable integer type
+        
+        # Ensure numeric columns are properly typed
+        numeric_cols = [
+            'talk', 'hold', 'acw', 'aht', 'paperless_conversion', 
+            'homeserve_transfers', 'allconnect_xfer/match_combo',
+            'osat_with_agent', 'resolution_rate', 'talk_available_%',
+            'off_phone_%', 'conformance'
+        ]
+        
+        for col in numeric_cols:
+            if col in self.df.columns:
+                self.df[col] = pd.to_numeric(self.df[col], errors='coerce')
+        
+        # Ensure date components are proper integers
+        if 'date_year' in self.df.columns:
+            self.df['date_year'] = self.df['date_year'].astype('Int64')
+        if 'date_day' in self.df.columns:
+            self.df['date_day'] = self.df['date_day'].astype('Int64')
+            
+        return self
+    
     def add_calculated_metrics(self):
         """Add calculated fields and metrics."""
         logger.info("Adding calculated metrics")
@@ -121,7 +156,7 @@ class AEPDataCleaner:
         # Efficiency ratio
         if 'interaction_count' in self.df.columns and 'aht' in self.df.columns:
             self.df['calls_per_hour'] = np.where(
-                self.df['aht'] > 0,
+                (self.df['aht'] > 0) & (self.df['aht'] < np.inf),
                 3600 / self.df['aht'],
                 0
             )
@@ -183,6 +218,7 @@ class AEPDataCleaner:
          .clean_column_names()
          .parse_dates()
          .clean_percentages()
+         .fix_data_types()
          .handle_missing_values()
          .add_calculated_metrics()
          .validate_data()
