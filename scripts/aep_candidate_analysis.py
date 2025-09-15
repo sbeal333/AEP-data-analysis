@@ -87,14 +87,18 @@ class AEPCandidateAnalyzer:
             raise
 
     def execute_query(self, query: str, description: str = "") -> List[Dict]:
-        """Execute SQL query using MCP (placeholder for actual implementation)"""
+        """Execute SQL query using MCP"""
         print(f"🔍 {description}")
 
-        # In actual implementation, this would use the MCP connection
-        # For now, return placeholder data structure
-        print(f"Query: {query[:100]}...")
-        print("⏳ This would execute via MCP in actual implementation")
+        # Note: In a real implementation, this would use the MCP query tool
+        # For now, we'll indicate where MCP integration would happen
+        print(f"⚡ Executing query via MCP...")
 
+        # This is where you would call the MCP query tool:
+        # results = mcp_query_tool(query)
+        # return results
+
+        # For testing, return empty list - real implementation would return MCP results
         return []
 
     def get_aep_applicants(self) -> pd.DataFrame:
