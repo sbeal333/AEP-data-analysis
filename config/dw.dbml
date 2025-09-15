@@ -1,0 +1,277 @@
+// Data Warehouse Schema Documentation
+// AEP Performance Analytics - Bronze Layer Tables
+// Last Updated: 2025-09-15
+
+Project aep_data_warehouse {
+  database_type: 'PostgreSQL'
+  Note: '''
+    AEP Data Warehouse - Bronze layer tables for candidate and performance analysis.
+    Focus on applicant journey from portal through hiring and tenure tracking.
+  '''
+}
+
+// --------------------------------------
+// Applicant Portal Tables
+// --------------------------------------
+
+Table bronze.portal_applicants {
+  id bigint [primary key, note: 'Unique identifier for each applicant']
+  email varchar [note: 'Primary email address']
+  post_it varchar [note: 'Post-it note or comments']
+  pay_rate numeric [note: 'Requested or offered pay rate']
+  pay_type varchar [note: 'Type of pay: hourly, salary, etc.']
+  client_id bigint [note: 'Client company identifier']
+  job_title varchar [note: 'Job position title applied for']
+  last_name varchar [note: 'Applicant last name']
+  region_id bigint [note: 'Geographic region identifier']
+  cell_phone varchar [note: 'Cell phone number']
+  created_at timestamptz [note: 'Record creation timestamp']
+  created_by varchar [note: 'User who created the record']
+  cscc_major varchar [note: 'CSCC major field of study']
+  deleted_at timestamptz [note: 'Soft deletion timestamp']
+  first_name varchar [note: 'Applicant first name']
+  updated_at timestamptz [note: 'Last record update timestamp']
+  phone_number varchar [note: 'Primary phone number']
+  recruiter_id bigint [note: 'Assigned recruiter identifier']
+  cscc_semester varchar [note: 'CSCC semester information']
+  job_listing_id bigint [note: 'Job listing identifier']
+  requisition_id bigint [note: 'Job requisition identifier']
+  last_applied_at timestamptz [note: 'Most recent application timestamp']
+  last_employed_on date [note: 'Date of last employment']
+  application_token varchar [note: 'Unique application token']
+  cscc_has_responded boolean [note: 'Whether CSCC has responded']
+  last_status_change timestamp [note: 'When status was last changed']
+  offer_letter_token varchar [note: 'Offer letter access token']
+  applicant_source_id bigint [note: 'Source of applicant identifier']
+  applicant_status_id bigint [note: 'Current status identifier']
+  completed_drug_screen boolean [note: 'Drug screening completion status']
+  current_req_applied_at timestamp [note: 'Current requisition application time']
+  found_via_active_search boolean [note: 'Found through active recruiting']
+  is_potential_future_fit boolean [note: 'Marked as potential future candidate']
+  upload_offer_email_sent boolean [note: 'Offer upload email sent status']
+  pathway_to_success_token varchar [note: 'Pathway to success program token']
+  client_interview_required boolean [note: 'Whether client interview is required']
+  completed_background_check boolean [note: 'Background check completion status']
+  client_interview_completed_at date [note: 'Client interview completion date']
+  potential_future_fit_location varchar [note: 'Location for future fit consideration']
+  is_current_req_applied_at_fake boolean [note: 'Whether current req applied date is artificial']
+  candidate_was_employed_at_time_of_offer boolean [note: 'Employment status at time of offer']
+  _airbyte_raw_id varchar [note: 'Airbyte raw record identifier']
+  _airbyte_extracted_at timestamptz [note: 'Airbyte extraction timestamp']
+  _airbyte_generation_id bigint [note: 'Airbyte generation identifier']
+  _airbyte_meta jsonb [note: 'Airbyte metadata']
+
+  Note: 'Core applicant information from portal submissions'
+}
+
+Table bronze.portal_jakib_results {
+  id bigint [primary key, note: 'Unique identifier for Jakib assessment']
+  score numeric [note: 'Overall Jakib assessment score']
+  decision varchar [note: 'Hire recommendation decision']
+  scored_at date [note: 'When assessment was completed']
+  created_at timestamptz [note: 'Record creation timestamp']
+  updated_at timestamptz [note: 'Last record update timestamp']
+  applicant_id bigint [ref: > bronze.portal_applicants.id, note: 'Links to applicant record']
+  job_listing_id bigint [note: 'Job listing identifier']
+  requisition_id bigint [note: 'Job requisition identifier']
+  assessment_html varchar [note: 'Assessment results in HTML format']
+  assessment_text varchar [note: 'Assessment results in text format']
+  conversation_type varchar [note: 'Type of conversation conducted']
+  screen_reference_id bigint [note: 'Screen reference identifier']
+  applicant_document_id bigint [note: 'Associated document identifier']
+  full_conversation_text varchar [note: 'Complete conversation transcript']
+  copied_from_requisition_id bigint [note: 'Source requisition if copied']
+  _airbyte_raw_id varchar [note: 'Airbyte raw record identifier']
+  _airbyte_extracted_at timestamptz [note: 'Airbyte extraction timestamp']
+  _airbyte_generation_id bigint [note: 'Airbyte generation identifier']
+  _airbyte_meta jsonb [note: 'Airbyte metadata']
+
+  Note: 'Jakib AI assessment results for candidate evaluation'
+}
+
+Table bronze.portal_applicant_documents {
+  id bigint [primary key, note: 'Unique identifier for each document']
+  name varchar [note: 'Document display name']
+  file_name varchar [note: 'Original uploaded file name']
+  file_path varchar [note: 'Storage path or reference']
+  is_resume boolean [note: 'Whether document is identified as resume']
+  created_at timestamptz [note: 'Record creation timestamp']
+  created_by varchar [note: 'User who created the record']
+  updated_at timestamptz [note: 'Last record update timestamp']
+  resume_text varchar [note: 'Extracted text content from resume']
+  applicant_id bigint [ref: > bronze.portal_applicants.id, note: 'Links to applicant record']
+  original_document_id bigint [note: 'Original document identifier if copied']
+  resume_text_extraction_was_attempted boolean [note: 'Whether text extraction was attempted']
+  _airbyte_raw_id varchar [note: 'Airbyte raw record identifier']
+  _airbyte_extracted_at timestamptz [note: 'Airbyte extraction timestamp']
+  _airbyte_generation_id bigint [note: 'Airbyte generation identifier']
+  _airbyte_meta jsonb [note: 'Airbyte metadata']
+
+  Note: 'Documents uploaded by applicants during application process'
+}
+
+Table bronze.portal_resume_scores {
+  id bigint [primary key, note: 'Unique identifier for resume scoring']
+  created_at timestamptz [note: 'Record creation timestamp']
+  updated_at timestamptz [note: 'Last record update timestamp']
+  applicant_id bigint [ref: > bronze.portal_applicants.id, note: 'Links to applicant record']
+  requisition_id bigint [note: 'Job requisition identifier']
+  resume_only_score numeric [note: 'Overall resume quality score']
+  applicant_document_id bigint [ref: > bronze.portal_applicant_documents.id, note: 'Links to specific resume document']
+  resume_only_education varchar [note: 'Education analysis from resume']
+  resume_only_longevity varchar [note: 'Job longevity analysis from resume']
+  resume_only_experience varchar [note: 'Experience analysis from resume']
+  resume_only_current_location varchar [note: 'Current location extracted from resume']
+  resume_only_scoring_summary_html varchar [note: 'Scoring summary in HTML format']
+  resume_only_scoring_summary_text varchar [note: 'Scoring summary in text format']
+  _airbyte_raw_id varchar [note: 'Airbyte raw record identifier']
+  _airbyte_extracted_at timestamptz [note: 'Airbyte extraction timestamp']
+  _airbyte_generation_id bigint [note: 'Airbyte generation identifier']
+  _airbyte_meta jsonb [note: 'Airbyte metadata']
+
+  Note: 'AI-generated scores and analysis of applicant resumes'
+}
+
+// --------------------------------------
+// Client and Requisition Tables
+// --------------------------------------
+
+Table bronze.portal_clients {
+  id bigint [primary key, note: 'Unique client identifier']
+  city varchar [note: 'Client city location']
+  name varchar [note: 'Client company name']
+  state varchar [note: 'Client state location']
+  zip_code varchar [note: 'Client ZIP code']
+  address_1 varchar [note: 'Primary address line']
+  address_2 varchar [note: 'Secondary address line']
+  is_active boolean [note: 'Whether client is currently active']
+  region_id bigint [note: 'Geographic region identifier']
+  created_at timestamptz [note: 'Record creation timestamp']
+  created_by varchar [note: 'User who created the record']
+  updated_at timestamptz [note: 'Last record update timestamp']
+  bookings_url varchar [note: 'Client booking system URL']
+  sales_tax_id bigint [note: 'Sales tax identifier']
+  client_number varchar [note: 'Client number code']
+  account_manager_id bigint [note: 'Account manager identifier']
+  bill_rate_model_id bigint [note: 'Billing rate model']
+  dashboard_leader_id bigint [note: 'Dashboard leader identifier']
+  dashboard_region_id bigint [note: 'Dashboard region identifier']
+  payroll_specialist_id bigint [note: 'Payroll specialist identifier']
+  dashboard_line_of_business_id bigint [note: 'Line of business identifier']
+  onboarding_task_list_template_id bigint [note: 'Onboarding template identifier']
+  display_self_identification_tab_in_profile boolean [note: 'Self-identification tab visibility']
+  _airbyte_raw_id varchar [note: 'Airbyte raw record identifier']
+  _airbyte_extracted_at timestamptz [note: 'Airbyte extraction timestamp']
+  _airbyte_generation_id bigint [note: 'Airbyte generation identifier']
+  _airbyte_meta jsonb [note: 'Airbyte metadata']
+
+  Note: 'Client companies that hire through the portal'
+}
+
+Table bronze.portal_requisitions {
+  id bigint [primary key, note: 'Unique requisition identifier']
+  fill_by date [note: 'Target fill date for position']
+  pay_rate varchar [note: 'Pay rate for position']
+  position varchar [note: 'Job position title']
+  client_id bigint [ref: > bronze.portal_clients.id, note: 'Client company identifier']
+  closed_at timestamp [note: 'When requisition was closed']
+  is_closed boolean [note: 'Whether requisition is closed']
+  open_date date [note: 'When requisition was opened']
+  agent_type varchar [note: 'Type of agent position']
+  ai_context varchar [note: 'AI context for scoring']
+  chatbot_id bigint [note: 'Associated chatbot identifier']
+  class_size bigint [note: 'Training class size']
+  created_at timestamptz [note: 'Record creation timestamp']
+  created_by varchar [note: 'User who created the record']
+  deleted_at timestamptz [note: 'Soft deletion timestamp']
+  updated_at timestamptz [note: 'Last record update timestamp']
+  is_pipeline boolean [note: 'Whether this is pipeline requisition']
+  requested_by varchar [note: 'Who requested the requisition']
+  use_jakib_ai boolean [note: 'Whether to use Jakib AI assessment']
+  department_id bigint [note: 'Department identifier']
+  client_manager varchar [note: 'Client manager name']
+  requisition_key varchar [note: 'Requisition key identifier']
+  use_voice_call_ai boolean [note: 'Whether to use voice call AI']
+  ai_scoring_context varchar [note: 'AI scoring context details']
+  number_of_openings bigint [note: 'Number of open positions']
+  requisition_type_id bigint [note: 'Type of requisition']
+  primary_recruiter_id bigint [note: 'Primary recruiter identifier']
+  number_of_other_vendors bigint [note: 'Number of competing vendors']
+  closed_requisition_reason_id bigint [note: 'Reason for closing requisition']
+  _airbyte_raw_id varchar [note: 'Airbyte raw record identifier']
+  _airbyte_extracted_at timestamptz [note: 'Airbyte extraction timestamp']
+  _airbyte_generation_id bigint [note: 'Airbyte generation identifier']
+  _airbyte_meta jsonb [note: 'Airbyte metadata']
+
+  Note: 'Job requisitions posted by clients'
+}
+
+// --------------------------------------
+// Employee Performance Tables
+// --------------------------------------
+
+Table bronze.adp_tenure_history {
+  file_number varchar [note: 'ADP file number identifier']
+  payroll_name varchar [note: 'Employee name as appears in payroll']
+  hire_date date [note: 'Official hire date']
+  rehire_date date [note: 'Rehire date if applicable']
+  previous_termination_date date [note: 'Previous termination date if rehired']
+  termination_date date [note: 'Current termination date if applicable']
+  termination_reason varchar [note: 'Reason for leaving if terminated']
+  position_status varchar [note: 'Current position status']
+  leave_of_absence_start_date varchar [note: 'LOA start date if applicable']
+  leave_of_absence_return_date varchar [note: 'LOA return date if applicable']
+  home_department_code char [note: 'Department code']
+  home_department_description varchar [note: 'Department description']
+  payroll_company_code varchar [note: 'Payroll company identifier']
+  position_id varchar [note: 'Position identifier']
+  client_code varchar [note: 'Client assignment code']
+  client varchar [note: 'Client name or description']
+  regular_pay_rate varchar [note: 'Regular hourly pay rate']
+  recruited_by varchar [note: 'Recruiter or hiring source']
+  business_unit varchar [note: 'Business unit assignment']
+  requisition_key varchar [note: 'Job requisition key']
+  email varchar [note: 'Employee email address']
+  adp_id varchar [note: 'ADP system identifier']
+  requisition_id integer [note: 'Numerical requisition ID']
+  applicant_id integer [ref: > bronze.portal_applicants.applicant_id, note: 'Links back to original application']
+  regular_hours varchar [note: 'Regular hours worked']
+  ot_hours varchar [note: 'Overtime hours worked']
+  pto_sick_hours varchar [note: 'PTO/sick hours used']
+  holiday_hours varchar [note: 'Holiday hours']
+  voluntary_involuntary_flag varchar [note: 'Voluntary vs involuntary termination flag']
+  home_phone varchar [note: 'Employee home phone number']
+  snapshot_date date [note: 'Date of this data snapshot']
+
+  Note: 'Employee tenure and employment information from ADP system.  We only want records where the snapshot_date is the max(snapshot_date) for the entire table.'
+}
+
+// --------------------------------------
+// Key Relationships
+// --------------------------------------
+
+/*
+Primary Data Flow:
+1. Applicants submit applications → portal_applicants
+2. Applicants take Jakib assessment → portal_jakib_results
+3. Applicants upload documents → portal_applicant_documents
+4. Resumes are scored by AI → portal_resume_scores
+5. Hired applicants appear in → adp_tenure_history
+
+Key Analysis Joins:
+- Applicant performance: portal_applicants + portal_jakib_results + portal_resume_scores + adp_tenure_history
+- Hire success prediction: Compare Jakib scores + resume scores to actual tenure outcomes
+- Document analysis: portal_applicant_documents + portal_resume_scores for resume quality insights
+*/
+
+// --------------------------------------
+// Indexes for Performance
+// --------------------------------------
+
+/*
+Recommended indexes for common queries:
+- bronze.portal_applicants: created_at, applicant_status_id, requisition_id
+- bronze.portal_jakib_results: applicant_id, assessment_date, overall_score
+- bronze.portal_resume_scores: applicant_id, overall_resume_score
+- bronze.adp_tenure_history: applicant_id, hire_date, employment_status
+*/
